@@ -1,0 +1,4 @@
+until pc 0x80000038
+mem 0x80000050 8
+reg v10
+q 
