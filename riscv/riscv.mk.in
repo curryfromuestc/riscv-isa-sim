@@ -964,6 +964,7 @@ riscv_insn_ext_zfbfmin = \
 
 riscv_insn_ext_zvfbfmin = \
 	vfncvtbf16_f_f_w \
+	vfncvtbf16_x_f_w \
 	vfwcvtbf16_f_f_v \
 
 riscv_insn_ext_zvfbfwma = \

@@ -1948,6 +1948,7 @@ void disassembler_t::add_instructions(const isa_parser_t* isa, bool strict)
 
   if (ext_enabled(EXT_ZVFBFMIN)) {
     DEFINE_VECTOR_V(vfncvtbf16_f_f_w);
+    DEFINE_VECTOR_V(vfncvtbf16_x_f_w);
     DEFINE_VECTOR_V(vfwcvtbf16_f_f_v);
   }
 

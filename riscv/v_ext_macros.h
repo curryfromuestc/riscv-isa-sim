@@ -2092,4 +2092,15 @@ VI_VX_ULOOP({ \
 #define P_SET_OV(ov) \
   if (ov) P.VU.vxsat->write(1);
 
+#define VI_VFP_NCVT_BF16_TO_INT8(BODY, CHECK) \
+  VI_CHECK_SDS(false); \
+  switch (P.VU.vsew) { \
+    case e8: \
+      { VI_VFP_CVT_LOOP(CVT_FP_TO_INT_PARAMS(16, 8, int), CHECK, BODY); } \
+      break; \
+    default: \
+      require(0); \
+      break; \
+  }
+
 #endif
