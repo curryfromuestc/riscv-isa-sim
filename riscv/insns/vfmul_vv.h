@@ -1,5 +1,5 @@
 // vfmul.vv vd, vs1, vs2, vm
-VI_VFP_VV_LOOP
+VI_VFP_VV_LOOP_BF16
 ({
   vd = f16_mul(vs1, vs2);
 },
@@ -8,4 +8,7 @@ VI_VFP_VV_LOOP
 },
 {
   vd = f64_mul(vs1, vs2);
+},
+{
+  vd = bf16_mul(vs1, vs2);
 })

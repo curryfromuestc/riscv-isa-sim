@@ -1,5 +1,5 @@
 // vfmax
-VI_VFP_VV_LOOP
+VI_VFP_VV_LOOP_BF16
 ({
   vd = f16_max(vs2, vs1);
 },
@@ -8,4 +8,7 @@ VI_VFP_VV_LOOP
 },
 {
   vd = f64_max(vs2, vs1);
+},
+{
+  vd = bf16_max(vs2, vs1);
 })

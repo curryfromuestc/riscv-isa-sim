@@ -129,7 +129,9 @@ static inline bool is_overlapped_widen(const int astart, int asize,
 #define VI_CHECK_STORE(elt_width, is_mask_ldst) \
   require_vector(false); \
   reg_t veew = is_mask_ldst ? 1 : sizeof(elt_width##_t) * 8; \
-  float vemul = is_mask_ldst ? 1 : ((float)veew / P.VU.vsew * P.VU.vflmul); \
+  /* BF16特殊处理：当SEW=256且操作16位数据时，使用有效SEW=16 */ \
+  reg_t effective_sew = (P.VU.vsew == 256 && veew == 16) ? 16 : P.VU.vsew; \
+  float vemul = is_mask_ldst ? 1 : ((float)veew / effective_sew * P.VU.vflmul); \
   reg_t emul = vemul < 1 ? 1 : vemul; \
   require(vemul >= 0.125 && vemul <= 8); \
   require_align(insn.rd(), vemul); \
@@ -433,6 +435,11 @@ static inline bool is_overlapped_widen(const int astart, int asize,
 #define VFP_VV_PARAMS(width) \
   float##width##_t &vd = P.VU.elt<float##width##_t>(rd_num, i, true); \
   VFP_VV_CMP_PARAMS(width)
+
+#define VFP_BF16_VV_PARAMS() \
+  bfloat16_t &vd = P.VU.elt<bfloat16_t>(rd_num, i, true); \
+  bfloat16_t vs1 = P.VU.elt<bfloat16_t>(rs1_num, i); \
+  bfloat16_t vs2 = P.VU.elt<bfloat16_t>(rs2_num, i);
 
 #define VFP_VF_CMP_PARAMS(width) \
   float##width##_t rs1 = f##width(READ_FREG(rs1_num)); \
@@ -1440,7 +1447,8 @@ VI_VX_ULOOP({ \
 
 #define VI_VFP_BF16_COMMON \
   require_fp; \
-  require((P.VU.vsew == e16 && p->extension_enabled(EXT_ZVFBFWMA))); \
+  require((P.VU.vsew == e16 && p->extension_enabled(EXT_ZVFBFWMA)) || \
+          (P.VU.vsew == e256)); \
   require_vector(true); \
   require(STATE.frm->read() < 0x5); \
   reg_t UNUSED vl = P.VU.vl->read(); \
@@ -1551,6 +1559,8 @@ VI_VX_ULOOP({ \
   } \
   P.VU.vstart->write(0);
 
+
+
 #define VI_VFP_VV_LOOP(BODY16, BODY32, BODY64) \
   VI_CHECK_SSS(true); \
   VI_VFP_LOOP_BASE \
@@ -1570,6 +1580,41 @@ VI_VX_ULOOP({ \
     case e64: { \
       VFP_VV_PARAMS(64); \
       BODY64; \
+      set_fp_exceptions; \
+      break; \
+    } \
+    default: \
+      require(0); \
+      break; \
+  }; \
+  DEBUG_RVV_FP_VV; \
+  VI_VFP_LOOP_END
+
+#define VI_VFP_VV_LOOP_BF16(BODY16, BODY32, BODY64, BODY_BF16) \
+  VI_CHECK_SSS(true); \
+  VI_VFP_BF16_LOOP_BASE \
+  switch (P.VU.vsew) { \
+    case e16: { \
+      VFP_VV_PARAMS(16); \
+      BODY16; \
+      set_fp_exceptions; \
+      break; \
+    } \
+    case e32: { \
+      VFP_VV_PARAMS(32); \
+      BODY32; \
+      set_fp_exceptions; \
+      break; \
+    } \
+    case e64: { \
+      VFP_VV_PARAMS(64); \
+      BODY64; \
+      set_fp_exceptions; \
+      break; \
+    } \
+    case e256: { \
+      VFP_BF16_VV_PARAMS(); \
+      BODY_BF16; \
       set_fp_exceptions; \
       break; \
     } \

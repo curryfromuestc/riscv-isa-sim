@@ -35,12 +35,18 @@ reg_t vectorUnit_t::vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t new
 
     vsew = 1 << (extract64(newType, 3, 3) + 3);
     vflmul = new_vlmul >= 0 ? 1 << new_vlmul : 1.0 / (1 << -new_vlmul);
-    vlmax = (VLEN/vsew) * vflmul;
+    
+    // BF16特殊处理：SEW=5表示BF16模式，虽然vsew=256但实际操作16位数据
+    reg_t effective_sew_for_vlmax = (vsew == 256) ? 16 : vsew;
+    vlmax = (VLEN/effective_sew_for_vlmax) * vflmul;
     vta = extract64(newType, 6, 1);
     vma = extract64(newType, 7, 1);
 
+    // BF16特殊处理：SEW=5表示BF16模式，虽然vsew=256但实际操作16位数据
+    reg_t effective_sew_for_check = (vsew == 256) ? 16 : vsew;
+    
     vill = !(vflmul >= 0.125 && vflmul <= 8)
-           || vsew > std::min(vflmul, 1.0f) * ELEN
+           || effective_sew_for_check > std::min(vflmul, 1.0f) * ELEN
            || (newType >> 8) != 0
            || (rd == 0 && rs1 == 0 && old_vlmax != vlmax);
 
